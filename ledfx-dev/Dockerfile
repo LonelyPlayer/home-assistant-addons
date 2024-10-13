@@ -30,7 +30,7 @@ RUN \
     && pip install \
     --no-cache-dir -r /tmp/requirements.txt \
     && pip install \
-    --no-cache-dir git+https://github.com/LedFx/LedFx \
+    --no-cache-dir git+https://github.com/LonelyPlayer/LedFx \
     \
     && rm -rf /usr/local/lib/python3.12/site-packages/ledfx_frontend \
     && curl -L --max-redirs 10 -o ledfx_frontend_hass.zip https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/ledfx_frontend_hass.zip \
