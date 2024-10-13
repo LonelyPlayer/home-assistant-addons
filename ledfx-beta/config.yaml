@@ -18,7 +18,7 @@ ingress_stream: true
 ingress_port: 0
 ingress_entry: "#/./"
 panel_icon: mdi:emoticon-devil-outline
-panel_title: LedFx-Hue
+panel_title: LedFx Hue
 init: false
 map:
   - ssl
