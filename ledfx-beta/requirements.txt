@@ -1,4 +1,4 @@
-python-mbedtls==2.10.1
+python-mbedtls==2.9.2
 pkgconfig==1.5.5
 setuptools==59.4.0
 wheel>=0.36.2
