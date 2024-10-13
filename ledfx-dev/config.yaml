@@ -1,9 +1,9 @@
 ---
-name: LedFx Addon-dev
+name: LedFx Addon-dev Hue
 version: 2.0.92-dev
 slug: ledfx-beta-dev
 description: A network based LED effect controller with support for advanced real-time audio effects!
-url: https://github.com/YeonV/home-assistant-addons/tree/master/ledfx-dev
+url: https://github.com/LonelyPlayer/home-assistant-addons/tree/master/ledfx-dev
 audio: true
 arch:
   - aarch64
@@ -18,7 +18,7 @@ ingress_stream: true
 ingress_port: 0
 ingress_entry: "#/./"
 panel_icon: mdi:emoticon-devil-outline
-panel_title: LedFx-dev
+panel_title: LedFx-Hue
 init: false
 map:
   - ssl
