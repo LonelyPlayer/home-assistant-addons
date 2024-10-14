@@ -1,0 +1,12 @@
+---
+build_from:
+  aarch64: "ghcr.io/home-assistant/aarch64-base-debian:bullseye"
+  amd64: "ghcr.io/home-assistant/amd64-base-debian:bullseye"
+  armv7: "ghcr.io/home-assistant/armv7-base-debian:bullseye"
+labels:
+  org.opencontainers.image.authors: "LonelyPlayer"
+  org.opencontainers.image.title: "Bluetooth Speaker"
+  org.opencontainers.image.description: "A way to use ha as a bluetooth speaker!"
+  org.opencontainers.image.source: "https://github.com/LonelyPlayer/home-assistant-addons/tree/master/bluetooth-speaker"
+  org.opencontainers.image.licenses: "MIT"
+  
