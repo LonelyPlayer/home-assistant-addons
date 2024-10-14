@@ -1,13 +1,13 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+# Use the official Home Assistant base image
+FROM homeassistant/home-assistant:latest
 
-# Install pulseaudio and bluetooth-related packages
-RUN apt-get update && \
-    apt-get install -y pulseaudio pulseaudio-module-bluetooth bluez bluetoothctl && \
-    apt-get clean
+# Install PulseAudio and Bluetooth-related packages
+RUN apk update && \
+    apk add --no-cache pulseaudio pulseaudio-alsa alsa-plugins-pulse pulseaudio-bluez bluez dbus pulseaudio-utils
 
-# Add run script
+# Copy the run script into the image
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
+# Set the default command to run the script
 CMD ["/run.sh"]

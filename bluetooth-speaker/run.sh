@@ -1,15 +1,37 @@
 #!/bin/bash
-# Start pulseaudio
-pulseaudio --start --log-target=syslog
 
-# Start bluetooth service
+# Function to start services with error checking
+start_service() {
+    "$@"  # Run the command
+    if [ $? -ne 0 ]; then
+        echo "Failed to start $1" >&2
+        exit 1
+    fi
+}
+
+# Start D-Bus daemon
+start_service dbus-daemon --system --fork
+
+# Start Bluetooth daemon
+start_service bluetoothd &
+
+# Wait for services to initialize
+sleep 2
+
+# Start PulseAudio server
+start_service pulseaudio --start --system
+
+# Give some time for D-Bus and Bluetooth to start
+sleep 2
+
+# Initialize Bluetooth settings
 bluetoothctl power on
 bluetoothctl agent on
 bluetoothctl default-agent
 bluetoothctl discoverable on
 bluetoothctl pairable on
 
-# Automatically load pulseaudio modules for Bluetooth devices
+# Load PulseAudio Bluetooth modules
 pactl load-module module-bluetooth-policy
 pactl load-module module-bluetooth-discover
 
@@ -26,7 +48,7 @@ route_bluetooth_audio() {
     done
 }
 
-# Monitor for new Bluetooth sources and route them automatically and keep the container alive
+# Monitor for new Bluetooth sources and route them automatically
 while true; do
     route_bluetooth_audio
     sleep 5  # Check for new connections every 5 seconds
