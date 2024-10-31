@@ -1,0 +1,23 @@
+{
+  "name": "Redmine Server",
+  "version": "1.0",
+  "slug": "redmine_server",
+  "description": "Make Home Assistant act as a Redmine server",
+  "url": "https://github.com/LonelyPlayer/home-assistant-addons/tree/master/docker_redmine",
+  "audio": true,
+  "arch": ["aarch64", "amd64", "armv7", "i386"],
+  "startup": "services",
+  "ingress": true,
+  "boot": "auto",
+  "map": ["ssl"],
+  "ports":
+    {"80/tcp": null},
+  "ports_description": {"80/tcp": "Web interface"},
+  "host_network": true,
+  "privileged": [
+    "NET_ADMIN",
+    "SYS_ADMIN"
+  ],
+  "options": {},
+  "schema": {}
+}

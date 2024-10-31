@@ -1,0 +1,7 @@
+.git
+circle.yml
+docker-compose.yml
+LICENSE
+README.md
+Changelog.md
+Makefile

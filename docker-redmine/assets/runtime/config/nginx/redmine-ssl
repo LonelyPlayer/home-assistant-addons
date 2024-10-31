@@ -1,0 +1,126 @@
+# Redmine
+# Maintainer: @sameersbn
+
+upstream redmine {
+  server 127.0.0.1:8080 fail_timeout=0;
+}
+
+## Normal HTTP host
+server {
+  listen 0.0.0.0:80;
+  listen [::]:80 default_server;
+  server_name _;
+  server_tokens off;
+
+  ## Redirects all traffic to the HTTPS host
+  return 301 https://$host:{{REDMINE_PORT}}$request_uri;
+}
+
+## HTTPS host
+server {
+  listen 0.0.0.0:443 ssl http2;
+  listen [::]:443 ssl http2 default_server;
+  server_tokens off;
+  root {{REDMINE_INSTALL_DIR}}/public;
+
+  ## Increase this if you want to upload large attachments
+  client_max_body_size {{NGINX_MAX_UPLOAD_SIZE}};
+
+  # generated 2022-10-13, Mozilla Guideline v5.6, nginx 1.18.0, OpenSSL 1.1.1f, intermediate configuration
+  # https://ssl-config.mozilla.org/#server=nginx&version=1.18.0&config=intermediate&openssl=1.1.1f&guideline=5.6
+  ssl_certificate {{SSL_CERTIFICATE_PATH}};
+  ssl_certificate_key {{SSL_KEY_PATH}};
+  ssl_session_timeout 1d;
+  ssl_session_cache  shared:SSL:10m; # about 40000 sessions
+  ssl_session_tickets off;
+  ssl_verify_client {{SSL_VERIFY_CLIENT}};
+  ssl_client_certificate {{SSL_CA_CERTIFICATES_PATH}};
+
+  # intermediate configuration
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+  ssl_prefer_server_ciphers off;
+
+
+  add_header Strict-Transport-Security "max-age={{NGINX_HSTS_MAXAGE}}" always;
+  # add_header X-Frame-Options SAMEORIGIN;
+  add_header X-Content-Type-Options nosniff;
+
+  ## [Optional] If your certficate has OCSP, enable OCSP stapling to reduce the overhead and latency of running SSL.
+  ## Replace with your ssl_trusted_certificate. For more info see:
+  ## - https://medium.com/devops-programming/4445f4862461
+  ## - https://www.ruby-forum.com/topic/4419319
+  ## - https://www.digitalocean.com/community/tutorials/how-to-configure-ocsp-stapling-on-apache-and-nginx
+  # ssl_stapling on;
+  # ssl_stapling_verify on;
+  # ssl_trusted_certificate {{SSL_CERTIFICATE_PATH}};
+  # resolver 208.67.222.222 208.67.222.220 valid=300s; # Can change to your DNS resolver if desired
+  # resolver_timeout 10s;
+
+  ## [Optional] Generate a stronger DHE parameter:
+  ##   cd /etc/ssl/certs
+  ##   sudo openssl dhparam -out dhparam.pem 4096
+  ##
+  ssl_dhparam {{SSL_DHPARAM_PATH}};
+
+  ## Individual nginx logs for this Redmine vhost
+  access_log  {{REDMINE_LOG_DIR}}/nginx/redmine_access.log;
+  error_log   {{REDMINE_LOG_DIR}}/nginx/redmine_error.log;
+
+
+  # the regex logic: after either /javascripts/ or /stylesheets/ find the suffixes we want, followed by one or more numbers 0-9
+  # This works because the files we want to cache always appear after one of those 2 directories:  but not the files we want to ignore
+  # /journals/edit/24174.js  and /uploads.js?attachment_id=1&filename=my-file-to-upload.png
+  location ~* {{REDMINE_RELATIVE_URL_ROOT}}(?<file>/(?:(?:plugin_assets|themes).+)?(?:javascripts|stylesheets|images|favicon).+(?:css|js|jpe?g|gif|ico|png|html)(\?[0-9]+)$) {
+
+    expires 24h;
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    try_files $file @redmine;
+  }
+
+  # Capture file path after relative url. Can't use rewrite since need
+  # to pass full path to @redmine proxy.
+  location ~* {{REDMINE_RELATIVE_URL_ROOT}}(?<file>.*) {
+    ## Serve static files from defined root folder.
+    ## @redmine is a named location for the upstream fallback, see below.
+    try_files $file @redmine;
+  }
+
+  add_header Access-Control-Allow-Origin '{{NGINX_CORS_ALLOW_ORIGIN}}';
+  add_header Access-Control-Allow-Methods '{{NGINX_CORS_ALLOW_METHODS}}';
+  add_header Access-Control-Allow-Headers '{{NGINX_CORS_ALLOW_HEADERS}}';
+  add_header Access-Control-Allow-Credentials '{{NGINX_CORS_ALLOW_CREDENTIALS}}';
+  if ($request_method = 'OPTIONS' ) {
+    return 204 no-content;
+  }
+
+  ## If a file, which is not found in the root folder is requested,
+  ## then the proxy passes the request to the upsteam (redmine unicorn).
+  location @redmine {
+    ## If you use HTTPS make sure you disable gzip compression
+    ## to be safe against BREACH attack.
+    gzip off;
+
+    ## Some requests take more than 30 seconds.
+    proxy_read_timeout      300;
+    proxy_connect_timeout   300;
+    proxy_redirect          off;
+    ## Long issue filters require increasing proxy buffers
+    proxy_buffers 8 8k;
+    proxy_buffer_size 32k;
+    proxy_busy_buffers_size 32k;
+
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    proxy_set_header    X-Forwarded-Ssl     on;
+    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto   {{NGINX_X_FORWARDED_PROTO}};
+    proxy_set_header    X-Frame-Options     SAMEORIGIN;
+
+    proxy_pass http://redmine;
+  }
+
+  error_page 500 /500.html;
+}
